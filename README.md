@@ -2,14 +2,14 @@
 
 1. Overview 
 
-[1. Create SQL DB (Database)](sqldb.md)
+[2. Create SQL DB (Database)](sqldb.md)
 
-[1. Create SQL DW (Data Warehouse)](sqldw.md)
+[3. Create SQL DW (Data Warehouse)](sqldw.md)
 
-[1. Create ADF (Azure Data Factory)](adf.md)
+[4. Create ADF (Azure Data Factory)](adf.md)
 
-[1. Create Analysis Services ](aas.md)
+[5. Create Analysis Services ](aas.md)
 
-[1. PowerBI]()
+[6. PowerBI]()
 
-[1. (Optional) Machine Learning Studio ](https://studio.azureml.net)
+[7. (Optional) Machine Learning Studio ](https://studio.azureml.net)
