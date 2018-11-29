@@ -29,6 +29,3 @@ INSERT INTO dbo.Employee VALUES (3, "Jack");
 1. Backup 
 
 1. Copy Database
-
-1. 
-
