@@ -1,0 +1,103 @@
+#!/bin/bash
+
+# Select Azure subscription
+az account list --output table
+
+echo "\n\r"
+
+read -p "Type subscription Name for lab>>" subName
+
+if [ ! -z "$subName" ]; then
+    echo "You select " $subName " for the lab."
+    az account set --subscription "$subName" --verbose
+else
+    echo "Please run the script again!! EXIT"
+    exit
+fi
+
+chkName=$(az account list --output tsv --query "[?isDefault].name")
+
+if [ "$subName" = "$chkName" ]; then
+    echo "Subscripion Name has confirmed"
+else 
+    echo "Please try again with correct subscription name"
+    exit
+fi
+
+sqlpwd=1q2w3e4r5t^Y
+
+echo ""
+az account list-locations --output table --query []['name','displayName']
+echo "Type location for the lab"
+read -p "Location >>" loc
+
+# set azure region
+if [ ! -z "$loc" ]; then
+    echo "You set location" $loc " for the lab."
+else
+    echo "Default location is West US 2"
+    loc=westus2
+fi
+
+# set resource group name
+# if you have exsiting one please use the one
+num=$(shuf -i0-1000 -n1)
+rgName=azlab-$num-rg #Save it as ps1
+# set blob name that should be unique 
+blobName=azlabblob$num # It will be saved it in parameter file
+# set container name that will be created in Blob
+containerName1=sampledatabase
+
+# set SQL Server (Instance) name
+sqlsvrName=azlabsql$num # It will be saved it in parameter file
+# DO NOT CHANGE!!!
+sqldbName=azlabdb
+# DO NOT CHANGE!!!
+sqladm=sqladmin
+
+# Create the Resource Group
+# if you have exsiting one you can skip this part
+echo "1. Create Resource Group " $rgName
+az group create --name $rgName --location $loc 
+
+# Storage Account
+# Create the Storage Account
+echo "2. Create Blob " $blobName
+az storage account create --name $blobName --resource-group $rgName --sku Standard_LRS --location $loc --kind StorageV2 
+
+# Get blob connection string 
+blobConn=$(az storage account show-connection-string --name $blobName --resource-group $rgName --output tsv)
+blobkey1=$(az storage account keys list -n $blobName -g $rgName --output tsv --query [0].value)
+
+# Create a container
+echo "3. Create container in the blob" $containerName 
+az storage container create --name $containerName1 --connection-string $blobConn
+
+# Create a DB and restore Database from backup
+# Download Sample DB (Backup)
+echo "4. Download a sample files"
+# wget is tool you can download files
+# Cloud Shell has wget.exe on both Bash or Powershell 
+mkdir $HOME/clouddrive/azlab
+wget -O $HOME/clouddrive/azlab/wwimdb.bacpac https://github.com/Microsoft/sql-server-samples/releases/download/wide-world-importers-v1.0/WideWorldImporters-Full.bacpac
+
+# Uploading a SQLDB Backup file
+echo "5. Upload sample db to blob"
+az storage blob upload --container-name $containerName1 --file $HOME/clouddrive/azlab/wwimdb.bacpac --name wwimdb.bacpac --connection-string $blobConn
+# Confirm file is uploaded 
+az storage blob list --container-name $containerName1 --connection-string $blobConn --output table
+
+# Create SQL Server and restore database from backup 
+# Create a SQL Server
+echo "6. Create a SQL Server " $sqlsvrName
+az sql server create --admin-user $sqladm --admin-password $sqlpwd --location $loc --name $sqlsvrName --resource-group $rgName 
+
+echo "Resource Group Name:          " $rgName
+echo "Location:                     " $loc
+echo "Blob:                         " $blobName
+echo "Blob Key:                     " $blobkey1
+echo "SQL Server:                   " $sqlsvrName
+echo "SQL Database:                 " $sqldbName
+echo "Your Resource Group Name is:  " $rgName
+echo "Your SQL DB IDis :            " $sqladm
+echo "Your SQL DB Password is:      " $sqlpwd
